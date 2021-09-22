@@ -1,0 +1,6 @@
+?!mtcze Someone is snorring here but you do not see anything without light.
+?!mtcze You tripped over some box of steel, probably radio. You'd better (#147 leave).
+
+?mtcze Your colleague Pavel wakes up and looks at you still half-sleeping.
+?mtcze (#165 Ask him to connect to HQ) and call for the plane to fetch your group.
+--

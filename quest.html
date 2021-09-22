@@ -1,0 +1,194 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <script src="jq.js"></script>
+  <script src="jq-mod.js"></script>
+  <link rel="stylesheet" href="jq-mod.css"/>
+  <style>
+    body { font-family: monospace; font-size: 16px; margin: 0px; }
+    body.onrun { background: #435; }
+    #content { margin: 0px auto; padding: 8px; overflow-y: hidden;
+      scrollbar-width: none; }
+    .onrun #content { background: #000; color: #2a2; font-weight: bold}
+    .centered { text-align: center; }
+    .clk { color: #cc0 }
+    #content > div:last-child { color: #5f5; }
+    #content > div:last-child .clk { color: #fff; cursor: pointer; }
+    #migalo { position: fixed; width: inherit; text-align: right; }
+    #migalo span { color: red; background: black; }
+    .invis { visibility: hidden; }
+    .modal { width: 75%; height: 75%; max-width: none; max-height: none; }
+    .modal textarea { width: 100%; }
+  </style>
+</head>
+<body>
+  <div id="greet" class="centered">
+    <h1>Welcome</h1>
+    <p>Behold, you have a chance to embark upon Programmer's Quest.<br/><br/>
+      To start, enter your name and click the button...</p>
+    <input id="nickname" type="text" placeholder="Your name or nickname"/>
+    <input type="button" value="Go!" onclick="gostart()"/>
+  </div>
+<div id="content">
+  <div id="migalo" class="invis"><span>--== connecting ==--</span></div>
+  <div id="past"></div>
+</div>
+
+<div id="ex1" class="modal">
+  <textarea></textarea>
+  Copy-paste to your machine, solve and
+    <a href="#" onclick="answer(); return false">Answer!</a>
+</div>
+
+<script>
+
+var baseaddr = location.href.replace(/[^\/]*$/,'');
+var engineurl = 'cgi-bin/x.cgi';
+var textbuf = '';
+var curplace = 129;
+var flags = ['alive'];
+var cnt = $('#content');
+var cntstk = [cnt];
+var hash;
+
+function addtext(txt) {
+  var past = cnt.find('#past');
+  var old = past.next();
+  old.find('.clk').removeAttr('onclick');
+  old.detach().appendTo(past);
+  while (cntstk.length > 1) {
+    cntstk.shift();
+  }
+  var cur = $('<div/>');
+  cnt.append(cur);
+  cntstk.unshift(cur);
+  textbuf += txt;
+}
+
+function typetext() {
+  var h1 = cnt.get(0).scrollHeight;
+  while (true) {
+    var m = textbuf.match(/(\S+\s*)/);
+    if (m == null) {
+      break;
+    }
+    var pt = m[1];
+    textbuf = textbuf.substr(pt.length);
+    if (pt.charAt(0) == '$') {
+      cntstk.shift();
+    } else if (pt[0] == '<' && /\~/.test(pt)) {
+      var el = $(pt.replace(/\~/g, ' '));
+      cntstk[0].append(el);
+      cntstk.unshift(el);
+    } else if (/\-\-/.test(pt)) {
+      cntstk[0].append('<br/><br/>');
+    } else {
+      cntstk[0].append(pt);
+      break;
+    }
+  }
+  var h2 = cnt.get(0).scrollHeight;
+  if (h2 > h1) {
+    cnt.get(0).scrollTo(0, h2);
+  }
+}
+
+function onresize() {
+  var w = window.innerWidth;
+  var h = window.innerHeight;
+  var ww = Math.round(w * 4 / 6);
+  var wh = Math.round(h * 6 / 8);
+  var top = Math.floor((h - wh) / 2);
+  cnt.width(ww).height(wh).css('margin-top', top + 'px');
+}
+
+function gostart() {
+  $('#greet').hide(400);
+  hash = calchash($('#nickname').val());
+  $('body').addClass('onrun');
+  onresize();
+  addtext('Connecting, please wait... ---');
+  loadplace();
+}
+
+function migalo(on) {
+  var mg = $('#migalo');
+  if (on) {
+    mg.removeClass('invis');
+  } else {
+    mg.addClass('invis');
+  }
+}
+
+function loadplace(id) {
+  if (typeof(id) != 'undefined') {
+    curplace = id;
+  }
+  migalo(true);
+  var loaddone = (data, status, xhr) => {
+    migalo(false);
+    addtext(convlinks(data));
+  };
+  $.post(baseaddr + engineurl, curplace + ' ' + flags.join(","), loaddone, 'text');
+}
+
+function loadtest(param) {
+  migalo(true);
+  var modaltest = (data, status, xhr) => {
+    migalo(false);
+    $('.modal textarea').val(data);
+    $('.modal').modal();
+    $('.modal textarea').height($('.modal').height() - $('.modal a').height());
+  };
+  $('.modal a').attr('param', param);
+  $.post(baseaddr + engineurl, param + ' 0', modaltest, 'text');
+}
+
+function doref(id) {
+  if (id % 10 != 0) {
+    loadplace('' + id);
+  } else {
+    loadtest('' + id + ' ' + hash);
+  }
+}
+
+function convlinks(txt) {
+  return txt.replace(
+    /\(\#(\d+)([^\)]+)\)/g,
+    '<span~class="clk"~onclick="doref($1)"/> $2 \$');
+}
+
+function answer() {
+  var checkans = (data, status, xhr) => {
+    data = data.split(':');
+    addtext(data[0] + ' --');
+    if (data.length > 1) {
+      flags.push(data[1].trim());
+    }
+    loadplace();
+  };
+  var param = $('.modal a').attr('param');
+  var answer = prompt('Answer:');
+  $.modal.close();
+  if (answer) {
+    $.post(baseaddr + engineurl, param + ' ' + answer, checkans, 'text');
+  }
+}
+
+function calchash(s) {
+  var res = 0;
+  for (var i = 0; i < s.length; i++) {
+    res ^= s.charCodeAt(i) << (i % 8);
+  }
+  return res;
+}
+
+$.ajaxSetup({contentType:'text/plain'});
+$(window).resize(onresize);
+setInterval(typetext, 70);
+
+</script>
+
+</body>
+</html>
