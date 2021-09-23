@@ -7,11 +7,12 @@ sub main() {
   print "Content-Type:text/plain\r\n\r\n";  
   my $data = <STDIN>;
   chomp $data;
-  my ($pg, $p1, $p2) = split / /, $data;
-  if ($pg % 10 != 0) {
-    prnfile($pg, $p1);
+  my ($page, $params) = split / /, $data, 2;
+  if ($page % 10 != 0) {
+    prnfile($page, $params);
   } else {
-    excfile($pg, $p1, $p2);
+    my @params2 = split / /, $params, 2;
+    excfile($page, $params2[0], @params2 > 1 ? $params2[1] : '');
   }
 }
 
@@ -45,7 +46,7 @@ sub prnfile() {
 
 sub excfile() {
   my ($pg, $hs, $ans) = @_;
-  my $res = `bash dat/$pg.sh $hs $ans`;
+  my $res = `bash dat/$pg.sh $hs '$ans'`;
   if ($? != 0) {
     print "Aw, medvediki!\n";
   } else {

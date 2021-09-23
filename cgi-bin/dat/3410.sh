@@ -1,8 +1,13 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 hs=$1
 
-ur=$(($2 % 1000))
+if [[ "$2" -ne "" ]] ; then
+  ur=$(($2 % 1000))
+else
+  ur=0
+fi
+
 
 fnx() {
   echo $(($1 * 137 % 222 + 98))
