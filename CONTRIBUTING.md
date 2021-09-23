@@ -29,10 +29,10 @@ as a "seed" for randomizer. It is going to be the same both when we generate
 data for user and later when we check answer - so you'll be able to check
 answer for exactly the data which user previously got from you :)
 
-Second argument, if exists, is the answer itself.
+Second argument is the answer itself, if non-empty.
 
-If the answer is absent, produce brief problem statement text and then
-the input data.
+If the answer is an empty string - script should produce brief problem
+statement text and then the input data.
 
 If the answer is here, check it and produce response message. Text of
 response is simply shown to user (so technically it doesn't matter) - but
@@ -53,7 +53,7 @@ random.seed(int(sys.argv[1]))
 a = random.randint(100, 999)
 b = random.randint(100, 999)
 
-if len(sys.argv) == 2:
+if sys.argv[2] == '':
     # no answer yet, just generate data
     print("Calculate the Sum-of-Squares of these numbers:")
     print("%d %d" % (a, b))
@@ -65,3 +65,7 @@ else:
     else:
         print("Try harder, that was close.")
 ```
+
+Important thing is to prevent script doing anything wrong or just breaking on
+unexpected answer provided. E.g. it shouldn't die with exception if
+user passed non-number etc.

@@ -46,9 +46,25 @@ sub prnfile() {
 
 sub excfile() {
   my ($pg, $hs, $ans) = @_;
-  my $res = `bash dat/$pg.sh $hs '$ans'`;
+  my @files = glob "dat/$pg.*";
+  if (@files < 1) {
+    print "No checker $pg\n";
+    return;
+  }
+  my $f = $files[0];
+  my $res = '';
+  if ($f =~ /.*\.sh/) {
+    $res = `bash $f $hs '$ans'`;
+  } elsif ($f =~ /.*\.py/) {
+    $res = `python3 $f $hs '$ans'`;
+  } elsif ($f =~ /.*\.pl/) {
+    $res = `perl $f $hs '$ans'`;
+  } else {
+    print "Unknown checker type $pg\n";
+    return;
+  }
   if ($? != 0) {
-    print "Aw, medvediki!\n";
+    print "Checker failed\n";
   } else {
     print $res;
   }
