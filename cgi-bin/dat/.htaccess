@@ -1,0 +1,2 @@
+# This folder shouldn't have direct web-access
+deny from all
